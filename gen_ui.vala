@@ -26,6 +26,7 @@ namespace Server
             _stop = _builder.get_object("img_stop") as ImageMenuItem;
             _ip_entry = _builder.get_object("entry_ip") as Entry;
             _port_entry = _builder.get_object("entry_port") as Entry;
+            _server = new ServerSocket();
             connect_events();
         }
 
@@ -52,7 +53,10 @@ namespace Server
         // Events Methods
         private void on_start_activate()
         {
-            _server = new ServerSocket();
+            _server.listen_async.begin( (obj, res) =>
+            {
+                _server.listen_async.end(res);
+            });
         }
 
         private void on_stop_activate()
@@ -72,7 +76,7 @@ namespace Server
 
         private bool on_dialog_prefs_close(Gdk.EventAny e)
         {
-            if(e.type == EventType.DELETE)
+            if(e.type == Gdk.EventType.DELETE)
             {
                 _prefs_dialog.hide_on_delete();
                 return true;
@@ -140,7 +144,7 @@ namespace Server
                         }
                         else
                         {
-                            _server.ip = new InetSocketAddress.from_string(_ip_entry.text, (uint) _port_entry.text);
+                            _server.ip = new InetSocketAddress.from_string(_ip_entry.get_text(), (uint) _port_entry.text);
                             _prefs_dialog.hide_on_delete();
                         }
                     }
