@@ -1,87 +1,80 @@
-// TCP Server
 namespace Server
 {
     public class ServerSocket : Object
     {
         private Thread<int> th_listen;
         private Thread<int> th_receive;
-        private File _pref_file;
-        private Socket _server_socket;
-        private InetSocketAddress _ip;
-        private uint _port;
-        public signal void s_client_connected();
+        private Socket _server;
+        private Socket _ctl_socket;
+        public signal void client_connected();
+        public signal void packet_received(uint8[] packet);
 
-        //Properties
-        public InetSocketAddress ip
+        public ServerSocket(string address, uint16 port)
         {
-            set
-            {
-                _ip = value;
-            }
-            get
-            {
-                return _ip;
-            }
+            InetSocketAddress _socket_address = new InetSocketAddress.from_string(address, port);
+            _server = new Socket(SocketFamily.IPV4, SocketType.STREAM, SocketProtocol.TCP);
+            _server.bind(_socket_address, true);
+            _server.set_listen_backlog(10);
+            _server.listen();
+            stdout.printf("\nComecando a ouvir...\n");
         }
 
-        public uint port
+        public async void begin_accept()
         {
-            set
+            if(Thread.supported())
             {
-                _port = value;
+                th_listen = new Thread<int>.try("begin_accept", start_server);
             }
-            get
+            else
             {
-                return _port;
-            }
-        }
-
-        public ServerSocket()
-        {
-            try
-            {
-                _server_socket = new Socket(SocketFamily.IPV4, SocketType.STREAM, SocketProtocol.TCP);
-            }
-            catch (Error e)
-            {
-                stdout.printf("\n%s\n", e.message);
-            }
-
-        }
-
-        public async void listen_async()
-        {
-            try
-            {
-                if(Thread.supported() == false)
-                {
-                    stdout.printf("\nThread is not supported by O.S.\n");
-                }
-                else
-                {
-                    th_listen = new Thread<int>.try("start_server_thread", start_server);
-                }
-            }
-            catch(Error e)
-            {
-                stdout.printf("\n%s\n", e.message);
+                stdout.printf("\nO sistema nao possui suporte para threads!\n");
             }
         }
 
         private int start_server()
         {
-            try
+            while(true)
             {
-                _server_socket.set_listen_backlog(10);
-                _server_socket.bind(_ip, true);
-                _server_socket.listen();
-                _server_socket.accept();
+                stdout.printf("\nAceitando conexoes...\n");
+                _ctl_socket = _server.accept();
+                client_connected();
+                this.begin_receive.begin((obj, res) =>
+                {
+                    this.begin_receive.end(res);
+                });
             }
-            catch (Error e)
-            {
-                stdout.printf("\n%s\n", e.message);
-            }
+            return 0;
+        }
 
+        public async void begin_receive()
+        {
+            if(Thread.supported())
+            {
+                th_receive = new Thread<int>.try("begin_receive", receive_data);
+            }
+            else
+            {
+                stdout.printf("\nO sistema nao possui suporte para threads!\n");
+            }
+        }
+
+        private int receive_data()
+        {
+            while(true)
+            {
+                if(_ctl_socket.condition_wait(IOCondition.IN) == true)
+                {
+                    uint8[] _buffer = new uint8[256];
+                    ssize_t len = _ctl_socket.receive(_buffer);
+                    stdout.printf("\n%s\n", (string) _buffer);
+                    packet_received(_buffer);
+                    continue;
+                }
+                else
+                {
+                    continue;
+                }
+            }
             return 0;
         }
     }
