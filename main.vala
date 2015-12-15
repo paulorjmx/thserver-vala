@@ -1,6 +1,6 @@
 namespace Server
 {
-    public int main(string[] args)
+    public static int main(string[] args)
     {
         Gtk.init(ref args);
         ServerUI server_ui = new ServerUI();
