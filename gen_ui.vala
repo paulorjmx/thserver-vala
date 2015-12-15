@@ -4,7 +4,7 @@ namespace Server
 {
     public class ServerUI : Object
     {
-        private ServerSocket _server;
+        private ServerSocket _server = new ServerSocket("127.0.0.1", 8000);
         private Window _main_window;
         private Dialog _prefs_dialog;
         private Entry _ip_entry;
@@ -12,7 +12,9 @@ namespace Server
         private ImageMenuItem _preferences;
         private ImageMenuItem _start;
         private ImageMenuItem _stop;
+        private TextView _log_msg;
         private Builder _builder;
+        private StringBuilder _sb = new StringBuilder();
 
         public ServerUI()
         {
@@ -26,7 +28,7 @@ namespace Server
             _stop = _builder.get_object("img_stop") as ImageMenuItem;
             _ip_entry = _builder.get_object("entry_ip") as Entry;
             _port_entry = _builder.get_object("entry_port") as Entry;
-            _server = new ServerSocket();
+            _log_msg = _builder.get_object("log_msg") as TextView;
             connect_events();
         }
 
@@ -48,15 +50,30 @@ namespace Server
             _preferences.activate.connect(on_preferences_activated);
             _prefs_dialog.delete_event.connect(on_dialog_prefs_close);
             _prefs_dialog.response.connect(on_prefs_dialog_response);
+            _server.client_connected.connect(on_client_connected);
+            _server.packet_received.connect(on_packet_received);
         }
 
         // Events Methods
         private void on_start_activate()
         {
-            _server.listen_async.begin( (obj, res) =>
+            _server.begin_accept.begin( (obj, res) =>
             {
-                _server.listen_async.end(res);
+                _server.begin_accept.end(res);
             });
+        }
+
+        private void on_client_connected()
+        {
+            _sb.append("\nCliente conectado!\n");
+            _log_msg.buffer.text = (string) _sb.data;
+        }
+
+        private void on_packet_received(uint8[] buffer)
+        {
+            _sb.append("\n");
+            _sb.append((string) buffer);
+            _log_msg.buffer.text = (string) _sb.data;
         }
 
         private void on_stop_activate()
@@ -66,6 +83,7 @@ namespace Server
 
         private void on_main_main_window_destroy()
         {
+            /*_server.shutdown_server();*/
             Gtk.main_quit();
         }
 
@@ -144,7 +162,9 @@ namespace Server
                         }
                         else
                         {
-                            _server.ip = new InetSocketAddress.from_string(_ip_entry.get_text(), (uint) _port_entry.text);
+                            /*_server.listen_address = new InetSocketAddress.from_string(_ip_entry.get_text(), 8000);*/
+                            /*stdout.printf("\n%s\n", _server.listen_address.address.to_string());*/
+                            /*stdout.printf("\n%s\n", _server.listen_address.get_port().to_string());*/
                             _prefs_dialog.hide_on_delete();
                         }
                     }
