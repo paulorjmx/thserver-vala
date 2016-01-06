@@ -65,8 +65,9 @@ namespace Server
 
         private void on_client_connected()
         {
-            _sb.append("\nCliente conectado!\n");
-            _log_msg.buffer.text = (string) _sb.data;
+            /*_sb.append("\nCliente conectado!\n");*/
+            /*_log_msg.buffer.text = (string) _sb.data;*/
+            stdout.printf("\nCliente conectado!\n");
         }
 
         private void on_packet_received(uint8[] buffer)
@@ -74,6 +75,7 @@ namespace Server
             _sb.append("\n");
             _sb.append((string) buffer);
             _log_msg.buffer.text = (string) _sb.data;
+            stdout.printf("\n%s\n", (string) buffer);
         }
 
         private void on_stop_activate()
