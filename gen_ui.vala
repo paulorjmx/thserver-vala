@@ -14,7 +14,8 @@ namespace Server
         private ImageMenuItem _stop;
         private TextView _log_msg;
         private Builder _builder;
-        private StringBuilder _sb = new StringBuilder();
+        private TextBuffer _txt_buff;
+        private TextIter _txt_iter;
 
         public ServerUI()
         {
@@ -29,6 +30,8 @@ namespace Server
             _ip_entry = _builder.get_object("entry_ip") as Entry;
             _port_entry = _builder.get_object("entry_port") as Entry;
             _log_msg = _builder.get_object("log_msg") as TextView;
+            _txt_buff = _log_msg.get_buffer();
+            _txt_buff.get_start_iter(out _txt_iter);
             connect_events();
         }
 
@@ -65,16 +68,19 @@ namespace Server
 
         private void on_client_connected()
         {
-            /*_sb.append("\nCliente conectado!\n");*/
-            /*_log_msg.buffer.text = (string) _sb.data;*/
             stdout.printf("\nCliente conectado!\n");
         }
 
-        private void on_packet_received(uint8[] buffer)
+        private void on_packet_received(uint8[] buffer, int length)
         {
-            _sb.append("\n");
-            _sb.append((string) buffer);
-            _log_msg.buffer.text = (string) _sb.data;
+            if(_txt_iter.is_start() != true)
+            {
+                _txt_buff.insert(ref _txt_iter, "\n".concat((string) buffer), length);
+            }
+            else
+            {
+                _txt_buff.insert(ref _txt_iter, (string) buffer, length);
+            }
             stdout.printf("\n%s\n", (string) buffer);
         }
 
