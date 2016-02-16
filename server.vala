@@ -6,7 +6,7 @@ namespace Server
         private Thread<void*> th_receive;
         private Socket _server;
         public signal void client_connected();
-        public signal void packet_received(uint8[] packet);
+        public signal void packet_received(uint8[] packet, int len);
 
         public ServerSocket(string address, uint16 port)
         {
@@ -64,11 +64,13 @@ namespace Server
                             {
                                 uint8[] _buffer = new uint8[256];
                                 ssize_t len = _sock.receive(_buffer);
-                                packet_received(_buffer);
-                                /*this.begin_accept.begin( (obj, res) =>*/
-                                /*{*/
-                                    /*this.begin_accept.end(res);*/
-                                /*});*/
+                                if((string) _buffer == "SHT_CLI")
+                                {
+                                    _sock.shutdown(true, true);
+                                    _sock.close();
+                                    break;
+                                }
+                                packet_received(_buffer, (int) len);
                                 continue;
                             }
                             else
