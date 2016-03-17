@@ -73,9 +73,10 @@ namespace Server
 
         private void on_packet_received(uint8[] buffer, int length)
         {
+            string text_received = "\n".concat((string) buffer);
             if(_txt_iter.is_start() != true)
             {
-                _txt_buff.insert(ref _txt_iter, "\n".concat((string) buffer), length);
+                _txt_buff.insert(ref _txt_iter, text_received, text_received.length);
             }
             else
             {
