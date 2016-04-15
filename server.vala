@@ -60,7 +60,7 @@ namespace Server
                     {
                         while(true)
                         {
-                            if(_sock.condition_wait(IOCondition.IN) == true)
+                            if(_sock.condition_timed_wait(IOCondition.IN, -1) == true)
                             {
                                 uint8[] _buffer = new uint8[256];
                                 ssize_t len = _sock.receive(_buffer);
